@@ -10,7 +10,7 @@ from status_code import *
 advance_blueprint = Blueprint('advancesearch', __name__)
 CORS(advance_blueprint)
 
-@advance_blueprint.route("/", methods=["POST", "GET"], strict_slashes=False)
+@advance_blueprint.route("/yearsearch", methods=["POST", "GET"], strict_slashes=False)
 def advanceSearch():
     data = request.get_data()
     json_data = json.loads(data.decode("utf-8"))
@@ -24,7 +24,7 @@ def advanceSearch():
         host="localhost",
         user="root",
         password="123456",
-        port=3307,
+        port=3306,
         database="CCVG")
     mycursor = mydb.cursor()
 
@@ -163,7 +163,7 @@ def advanceSearch():
 
         for i in getGazetteer(mycursor, village_id, gazetteerName)["data"]:
             table2["data"].append(i)
-
+        village_year = []
         for index in indexes:
             newTable = dicts[index]  # table3~12
             temp[index] = newTable  # {3: table3...}
@@ -172,10 +172,18 @@ def advanceSearch():
             else:
                 func = table2func[index]
                 res = func(mycursor, village_id, gazetteerName, year, year_range)
+
                 for j in res["data"]:
                     newTable["data"].append(j)  # table3~12["data"].append(i) =>
+
+                print("years are", res["year"])
+
                 if "year" in res.keys():
-                    newTable["year"] = res["year"]
+                    for y in res["year"]:
+
+                        village_year.append(res["year"])
+                        newTable["year"].append({village_id:village_year})
+
 
     table.append(table1)
     table.append(table2)
@@ -292,7 +300,7 @@ def getNaturalDisaster(mycursor, village_id, gazetteerName, year, year_range):
                     d["category1"] = item[0]
                     table["data"].append(d)
 
-        table["year"].append(result_dict)
+        table["year"].append({"naturaldisaster":result_dict})
 
     else:
         mycursor.execute(
@@ -328,8 +336,8 @@ def getNaturalEnvironment(mycursor, village_id, gazetteerName, year=None, year_r
         d = {}
         d["gazetteerName"] = gazetteerName
         d["gazetteerId"] = village_id
-        d["category1"] = item[0]
-        d["data"] = item[1]
+        d["data"] = item[0]
+        d["category1"] = item[1]
         d["unit"] = item[2]
         table["data"].append(d)
     return table
@@ -352,7 +360,7 @@ def getMilitary(mycursor, village_id, gazetteerName, year, year_range):
 
     result_dict["year_range_empty"] = []
     result_dict["year_range"] = []
-    result_dict["year_only_log"] = []
+    #result_dict["year_only_log"] = []
 
     if year_range != None and len(year_range) == 2:
         start_year = year_range[0]
@@ -364,12 +372,12 @@ def getMilitary(mycursor, village_id, gazetteerName, year, year_range):
         if start_year > end_year:
             table["data"] = []
             result_dict["year_range_log"] = "Start year should be smaller than end year!"
-            table["year"].append(result_dict)
+            table["year"].append({"military":result_dict})
             return table
 
-    if year != None:
+    if year != None and year!=[]:
         mycursor.execute(
-            "SELECT startYear_开始年 FROM military_军事 WHERE gazetteerId_村志代码={} AND m.startYear_开始年=m.endYear_结束年".format(
+            "SELECT startYear_开始年 FROM military_军事 as m WHERE gazetteerId_村志代码={} AND m.startYear_开始年=m.endYear_结束年".format(
                 village_id))
         same_year = mycursor.fetchall()
         same_years = set()
@@ -446,7 +454,7 @@ def getMilitary(mycursor, village_id, gazetteerName, year, year_range):
                     d["unit"] = item[6]
                     table["data"].append(d)
 
-    if year_range != None:
+    elif year_range != None and len(year_range) == 2:
         mycursor.execute(
             "SELECT m.startYear_开始年, m.endYear_结束年 FROM  military_军事 as m WHERE gazetteerId_村志代码={}".format(village_id))
         all_years = mycursor.fetchall()
@@ -520,11 +528,14 @@ def getMilitary(mycursor, village_id, gazetteerName, year, year_range):
 
                 d["startYear"] = item[3]
                 d["endYear"] = item[4]
+
                 d["data"] = item[5]
                 d["unit"] = item[6]
                 table["data"].append(d)
 
-    if year_range == None and year == None:
+
+    # when year_range and year are all None we return the list with all year
+    else:
         mycursor.execute(
             "SELECT mc.categoryId_类别代码 as mcid, mc.parentId_父类代码 as pid, mc.name_名称 as name,m.startYear_开始年,\
             m.endYear_结束年, data_数据, mu.name_名称\
@@ -551,11 +562,15 @@ def getMilitary(mycursor, village_id, gazetteerName, year, year_range):
 
             d["startYear"] = item[3]
             d["endYear"] = item[4]
+            if d["startYear"]  == d["endYear"] and d["startYear"] not in result_dict["year_only"]:
+                result_dict["year_only"].append(d["startYear"])
+            elif [d["startYear"],d["endYear"]] not in result_dict["year_range"]:
+                result_dict["year_range"].append([d["startYear"],d["endYear"]])
             d["data"] = item[5]
             d["unit"] = item[6]
             table["data"].append(d)
 
-    table["year"].append(result_dict)
+    table["year"].append({"military":result_dict})
     return table
 
 
@@ -569,7 +584,7 @@ def getEduaction(mycursor, village_id, gazetteerName, year, year_range):
 
     result_dict["year_range_empty"] = []
     result_dict["year_range"] = []
-    result_dict["year_only_log"] = []
+    #result_dict["year_only_log"] = []
 
     if year_range != None and len(year_range) == 2:
         start_year = year_range[0]
@@ -581,10 +596,10 @@ def getEduaction(mycursor, village_id, gazetteerName, year, year_range):
         if start_year > end_year:
             table["data"] = []
             result_dict["year_range_log"] = "Start year should be smaller than end year!"
-            table["year"].append(result_dict)
+            table["year"].append({"education":result_dict})
             return table
 
-    if year != None:
+    if year != None and year!=[]:
         mycursor.execute(
             "SELECT startYear_开始年 FROM  education_教育 WHERE gazetteerId_村志代码={} AND startYear_开始年=endYear_结束年".format(
                 village_id))
@@ -652,7 +667,7 @@ def getEduaction(mycursor, village_id, gazetteerName, year, year_range):
                     d["unit"] = item[6]
                     table["data"].append(d)
 
-    if year_range != None:
+    if year_range != None and len(year_range) == 2:
         mycursor.execute(
             "SELECT startYear_开始年, endYear_结束年 FROM education_教育 WHERE gazetteerId_村志代码={}".format(village_id))
         all_years = mycursor.fetchall()
@@ -720,7 +735,7 @@ def getEduaction(mycursor, village_id, gazetteerName, year, year_range):
                 d["unit"] = item[6]
                 table["data"].append(d)
 
-    if year_range == None and year == None:
+    else:
         mycursor.execute("SELECT  e.categoryId_类别代码 cat1, ec.parentId_父类代码 ca2, ec.name_名称, e.startYear_开始年, e.endYear_结束年,e.data_数据 ,eu.name_名称 FROM education_教育 e JOIN educationCategory_教育类 ec \
                                 ON e.categoryId_类别代码= ec.categoryId_类别代码 JOIN educationUnit_教育单位 eu \
                                 ON e.unitId_单位代码=eu.unitId_单位代码 \
@@ -740,11 +755,16 @@ def getEduaction(mycursor, village_id, gazetteerName, year, year_range):
             d["category1"] = item[2]
             d["startYear"] = item[3]
             d["endYear"] = item[4]
+            if d["startYear"]  == d["endYear"] and d["startYear"] not in result_dict["year_only"]:
+                result_dict["year_only"].append(d["startYear"])
+            elif [d["startYear"],d["endYear"]] not in result_dict["year_range"]:
+                result_dict["year_range"].append([d["startYear"],d["endYear"]])
+
             d["data"] = item[5]
             d["unit"] = item[6]
             table["data"].append(d)
 
-    table["year"].append(result_dict)
+    table["year"].append({"education":result_dict})
 
     return table
 
@@ -759,7 +779,7 @@ def getEconomy(mycursor, village_id, gazetteerName, year, year_range):
 
     result_dict["year_range_empty"] = []
     result_dict["year_range"] = []
-    result_dict["year_only_log"] = []
+    #result_dict["year_only_log"] = []
 
     if year_range != None and len(year_range) == 2:
         start_year = year_range[0]
@@ -771,10 +791,10 @@ def getEconomy(mycursor, village_id, gazetteerName, year, year_range):
         if start_year > end_year:
             table["data"] = []
             result_dict["year_range_log"] = "Start year should be smaller than end year!"
-            table["year"].append(result_dict)
+            table["year"].append({"economy":result_dict})
             return table
 
-    if year != None:
+    if year != None and year!=[]:
         mycursor.execute(
             "SELECT startYear_开始年 FROM economy_经济 WHERE gazetteerId_村志代码={} AND startYear_开始年=endYear_结束年".format(
                 village_id))
@@ -803,13 +823,13 @@ def getEconomy(mycursor, village_id, gazetteerName, year, year_range):
                         # the category2 also has two upper layer
                         if item[1] not in [1, 19, 37.38, 39, 40, 41, 47, 56, 62] and item[1] != None:
                             mycursor.execute(
-                                "SELECT parentId_父类代码,name_名称 FROM economycategory_经济类 WHERE categoryId_类别代码={}".format(
+                                "SELECT parentId_父类代码,name_名称 FROM economyCategory_经济类 WHERE categoryId_类别代码={}".format(
                                     item[1]))
                             categoryList = mycursor.fetchone()
                             categoryId, d["category2"] = categoryList[0], categoryList[1]
 
                             mycursor.execute(
-                                "SELECT name_名称 FROM economycategory_经济类 WHERE categoryId_类别代码={}".format(categoryId))
+                                "SELECT name_名称 FROM economyCategory_经济类 WHERE categoryId_类别代码={}".format(categoryId))
                             d["category3"] = mycursor.fetchone()[0]
 
                         # the category2 has no upper layer
@@ -820,7 +840,7 @@ def getEconomy(mycursor, village_id, gazetteerName, year, year_range):
                         # the category2 has onw upper layers
                         else:
                             mycursor.execute(
-                                "SELECT name_名称 FROM economycategory_经济类 WHERE categoryId_类别代码={}".format(item[1]))
+                                "SELECT name_名称 FROM economyCategory_经济类 WHERE categoryId_类别代码={}".format(item[1]))
                             d["category2"] = mycursor.fetchone()[0]
                             d["category3"] = "null"
 
@@ -847,13 +867,13 @@ def getEconomy(mycursor, village_id, gazetteerName, year, year_range):
                     # the category2 also has two upper layer
                     if item[1] not in [1, 19, 37.38, 39, 40, 41, 47, 56, 62] and item[1] != None:
                         mycursor.execute(
-                            "SELECT parentId_父类代码,name_名称 FROM economycategory_经济类 WHERE categoryId_类别代码={}".format(
+                            "SELECT parentId_父类代码,name_名称 FROM economyCategory_经济类 WHERE categoryId_类别代码={}".format(
                                 item[1]))
                         categoryList = mycursor.fetchone()
                         categoryId, d["category2"] = categoryList[0], categoryList[1]
 
                         mycursor.execute(
-                            "SELECT name_名称 FROM economycategory_经济类 WHERE categoryId_类别代码={}".format(categoryId))
+                            "SELECT name_名称 FROM economyCategory_经济类 WHERE categoryId_类别代码={}".format(categoryId))
                         d["category3"] = mycursor.fetchone()[0]
 
                     # the category2 has no upper layer
@@ -864,7 +884,7 @@ def getEconomy(mycursor, village_id, gazetteerName, year, year_range):
                     # the category2 has onw upper layers
                     else:
                         mycursor.execute(
-                            "SELECT name_名称 FROM economycategory_经济类 WHERE categoryId_类别代码={}".format(item[1]))
+                            "SELECT name_名称 FROM economyCategory_经济类 WHERE categoryId_类别代码={}".format(item[1]))
                         d["category2"] = mycursor.fetchone()[0]
                         d["category3"] = "null"
 
@@ -877,7 +897,7 @@ def getEconomy(mycursor, village_id, gazetteerName, year, year_range):
                     d["unit"] = item[6]
                     table["data"].append(d)
 
-    if year_range != None:
+    if year_range != None and len(year_range) == 2:
         mycursor.execute(
             "SELECT startYear_开始年, endYear_结束年 FROM  economy_经济 WHERE gazetteerId_村志代码={}".format(village_id))
         all_years = mycursor.fetchall()
@@ -905,13 +925,13 @@ def getEconomy(mycursor, village_id, gazetteerName, year, year_range):
                             # the category2 also has two upper layer
                             if item[1] not in [1, 19, 37.38, 39, 40, 41, 47, 56, 62] and item[1] != None:
                                 mycursor.execute(
-                                    "SELECT parentId_父类代码,name_名称 FROM economycategory_经济类 WHERE categoryId_类别代码={}".format(
+                                    "SELECT parentId_父类代码,name_名称 FROM economyCategory_经济类 WHERE categoryId_类别代码={}".format(
                                         item[1]))
                                 categoryList = mycursor.fetchone()
                                 categoryId, d["category2"] = categoryList[0], categoryList[1]
 
                                 mycursor.execute(
-                                    "SELECT name_名称 FROM economycategory_经济类 WHERE categoryId_类别代码={}".format(
+                                    "SELECT name_名称 FROM economyCategory_经济类 WHERE categoryId_类别代码={}".format(
                                         categoryId))
                                 d["category3"] = mycursor.fetchone()[0]
 
@@ -923,7 +943,7 @@ def getEconomy(mycursor, village_id, gazetteerName, year, year_range):
                             # the category2 has onw upper layers
                             else:
                                 mycursor.execute(
-                                    "SELECT name_名称 FROM economycategory_经济类 WHERE categoryId_类别代码={}".format(item[1]))
+                                    "SELECT name_名称 FROM economyCategory_经济类 WHERE categoryId_类别代码={}".format(item[1]))
                                 d["category2"] = mycursor.fetchone()[0]
                                 d["category3"] = "null"
 
@@ -950,13 +970,13 @@ def getEconomy(mycursor, village_id, gazetteerName, year, year_range):
                 # the category2 also has two upper layer
                 if item[1] not in [1, 19, 37.38, 39, 40, 41, 47, 56, 62] and item[1] != None:
                     mycursor.execute(
-                        "SELECT parentId_父类代码,name_名称 FROM economycategory_经济类 WHERE categoryId_类别代码={}".format(
+                        "SELECT parentId_父类代码,name_名称 FROM economyCategory_经济类 WHERE categoryId_类别代码={}".format(
                             item[1]))
                     categoryList = mycursor.fetchone()
                     categoryId, d["category2"] = categoryList[0], categoryList[1]
 
                     mycursor.execute(
-                        "SELECT name_名称 FROM economycategory_经济类 WHERE categoryId_类别代码={}".format(
+                        "SELECT name_名称 FROM economyCategory_经济类 WHERE categoryId_类别代码={}".format(
                             categoryId))
                     d["category3"] = mycursor.fetchone()[0]
 
@@ -968,7 +988,7 @@ def getEconomy(mycursor, village_id, gazetteerName, year, year_range):
                 # the category2 has onw upper layers
                 else:
                     mycursor.execute(
-                        "SELECT name_名称 FROM economycategory_经济类 WHERE categoryId_类别代码={}".format(item[1]))
+                        "SELECT name_名称 FROM economyCategory_经济类 WHERE categoryId_类别代码={}".format(item[1]))
                     d["category2"] = mycursor.fetchone()[0]
                     d["category3"] = "null"
 
@@ -981,7 +1001,7 @@ def getEconomy(mycursor, village_id, gazetteerName, year, year_range):
                 d["unit"] = item[6]
                 table["data"].append(d)
 
-    if year_range == None and year == None:
+    else:
         mycursor.execute("SELECT e.categoryId_类别代码 cat1, ec.parentId_父类代码 ca2, ec.name_名称, e.startYear_开始年,\
           e.endYear_结束年,e.data_数据 ,eu.name_名称 FROM economy_经济 e JOIN economyCategory_经济类 ec \
           ON e.categoryId_类别代码=ec.categoryId_类别代码 JOIN economyUnit_经济单位 eu \
@@ -993,11 +1013,11 @@ def getEconomy(mycursor, village_id, gazetteerName, year, year_range):
             # the category2 also has two upper layer
             if item[1] not in [1, 19, 37.38, 39, 40, 41, 47, 56, 62] and item[1] != None:
                 mycursor.execute(
-                    "SELECT parentId_父类代码,name_名称 FROM economycategory_经济类 WHERE categoryId_类别代码={}".format(item[1]))
+                    "SELECT parentId_父类代码,name_名称 FROM economyCategory_经济类 WHERE categoryId_类别代码={}".format(item[1]))
                 categoryList = mycursor.fetchone()
                 categoryId, d["category2"] = categoryList[0], categoryList[1]
 
-                mycursor.execute("SELECT name_名称 FROM economycategory_经济类 WHERE categoryId_类别代码={}".format(categoryId))
+                mycursor.execute("SELECT name_名称 FROM economyCategory_经济类 WHERE categoryId_类别代码={}".format(categoryId))
                 d["category3"] = mycursor.fetchone()[0]
 
             # the category2 has no upper layer
@@ -1007,7 +1027,7 @@ def getEconomy(mycursor, village_id, gazetteerName, year, year_range):
 
             # the category2 has onw upper layers
             else:
-                mycursor.execute("SELECT name_名称 FROM economycategory_经济类 WHERE categoryId_类别代码={}".format(item[1]))
+                mycursor.execute("SELECT name_名称 FROM economyCategory_经济类 WHERE categoryId_类别代码={}".format(item[1]))
                 d["category2"] = mycursor.fetchone()[0]
                 d["category3"] = "null"
 
@@ -1016,11 +1036,16 @@ def getEconomy(mycursor, village_id, gazetteerName, year, year_range):
             d["category1"] = item[2]
             d["startYear"] = item[3]
             d["endYear"] = item[4]
+            if d["startYear"]  == d["endYear"] and d["startYear"] not in result_dict["year_only"]:
+                result_dict["year_only"].append(d["startYear"])
+            elif [d["startYear"],d["endYear"]] not in result_dict["year_range"]:
+                result_dict["year_range"].append([d["startYear"],d["endYear"]])
+
             d["data"] = item[5]
             d["unit"] = item[6]
             table["data"].append(d)
 
-    table["year"].append(result_dict)
+    table["year"].append({"economy":result_dict})
     return table
 
 
@@ -1034,7 +1059,7 @@ def getFamilyPlanning(mycursor, village_id, gazetteerName, year, year_range):
 
     result_dict["year_range_empty"] = []
     result_dict["year_range"] = []
-    result_dict["year_only_log"] = []
+    #result_dict["year_only_log"] = []
 
     if year_range != None and len(year_range) == 2:
         start_year = year_range[0]
@@ -1046,10 +1071,10 @@ def getFamilyPlanning(mycursor, village_id, gazetteerName, year, year_range):
         if start_year > end_year:
             table["data"] = []
             result_dict["year_range_log"] = "Start year should be smaller than end year!"
-            table["year"].append(result_dict)
+            table["year"].append({"familyplanning":result_dict})
             return table
 
-    if year != None:
+    if year != None and year!=[]:
         mycursor.execute(
             "SELECT startYear_开始年 FROM  familyplanning_计划生育 WHERE gazetteerId_村志代码={} AND startYear_开始年=endYear_结束年".format(
                 village_id))
@@ -1105,7 +1130,7 @@ def getFamilyPlanning(mycursor, village_id, gazetteerName, year, year_range):
                     d["data"] = item[3]
                     d["unit"] = item[4]
                     table["data"].append(d)
-    if year_range != None:
+    if year_range != None and len(year_range) == 2:
         mycursor.execute(
             "SELECT startYear_开始年, endYear_结束年 FROM familyplanning_计划生育 WHERE gazetteerId_村志代码={}".format(village_id))
         all_years = mycursor.fetchall()
@@ -1162,7 +1187,7 @@ def getFamilyPlanning(mycursor, village_id, gazetteerName, year, year_range):
                 d["data"] = item[3]
                 d["unit"] = item[4]
                 table["data"].append(d)
-    if year_range == None and year == None:
+    else:
         mycursor.execute("SELECT  fc.name_名称, f.startYear_开始年,\
           f.endYear_结束年,f.data_数据 ,fu.name_名称 \
           FROM familyplanning_计划生育 f JOIN familyplanningcategory_计划生育类 fc \
@@ -1177,11 +1202,16 @@ def getFamilyPlanning(mycursor, village_id, gazetteerName, year, year_range):
             d["category"] = item[0]
             d["startYear"] = item[1]
             d["endYear"] = item[2]
+            if d["startYear"]  == d["endYear"] and d["startYear"] not in result_dict["year_only"]:
+                result_dict["year_only"].append(d["startYear"])
+            elif [d["startYear"],d["endYear"]] not in result_dict["year_range"]:
+                result_dict["year_range"].append([d["startYear"],d["endYear"]])
+
             d["data"] = item[3]
             d["unit"] = item[4]
             table["data"].append(d)
 
-    table["year"].append(result_dict)
+    table["year"].append({"familyplanning":result_dict})
     return table
 
 
@@ -1196,7 +1226,7 @@ def getPopulation(mycursor, village_id, gazetteerName, year, year_range):
 
     result_dict["year_range_empty"] = []
     result_dict["year_range"] = []
-    result_dict["year_only_log"] = []
+    #result_dict["year_only_log"] = []
 
     if year_range != None and len(year_range) == 2:
         start_year = year_range[0]
@@ -1208,10 +1238,10 @@ def getPopulation(mycursor, village_id, gazetteerName, year, year_range):
         if start_year > end_year:
             table["data"] = []
             result_dict["year_range_log"] = "Start year should be smaller than end year!"
-            table["year"].append(result_dict)
+            table["year"].append({"population":result_dict})
             return table
 
-    if year != None:
+    if year != None and year!=[]:
         mycursor.execute(
             "SELECT startYear_开始年 FROM population_人口 WHERE gazetteerId_村志代码={} AND startYear_开始年=endYear_结束年".format(
                 village_id))
@@ -1280,7 +1310,7 @@ def getPopulation(mycursor, village_id, gazetteerName, year, year_range):
                         d["data"] = item[5]
                         d["unit"] = item[6]
                         table["data"].append(d)
-    if year_range != None:
+    elif year_range != None and len(year_range) == 2:
         mycursor.execute(
             "SELECT startYear_开始年, endYear_结束年 FROM population_人口 WHERE gazetteerId_村志代码={}".format(village_id))
         all_years = mycursor.fetchall()
@@ -1350,7 +1380,7 @@ def getPopulation(mycursor, village_id, gazetteerName, year, year_range):
                 d["unit"] = item[6]
                 table["data"].append(d)
 
-    if year_range == None and year == None:
+    else:
         mycursor.execute("SELECT  p.categoryId_类别代码 cid, pc.parentId_父类代码 pid,  pc.name_名称, p.startYear_开始年,\
         p.endYear_结束年,p.data_数据 ,pu.name_名称 \
         FROM population_人口 p JOIN populationcategory_人口类 pc \
@@ -1371,11 +1401,16 @@ def getPopulation(mycursor, village_id, gazetteerName, year, year_range):
             d["category1"] = item[2]
             d["startYear"] = item[3]
             d["endYear"] = item[4]
+            if d["startYear"]  == d["endYear"] and d["startYear"] not in result_dict["year_only"]:
+                result_dict["year_only"].append(d["startYear"])
+            elif [d["startYear"],d["endYear"]] not in result_dict["year_range"]:
+                result_dict["year_range"].append([d["startYear"],d["endYear"]])
+
             d["data"] = item[5]
             d["unit"] = item[6]
             table["data"].append(d)
 
-    table["year"].append(result_dict)
+    table["year"].append({"population":result_dict})
     return table
 
 
@@ -1389,7 +1424,7 @@ def getEthnicgroups(mycursor, village_id, gazetteerName, year, year_range):
 
     result_dict["year_range_empty"] = []
     result_dict["year_range"] = []
-    result_dict["year_only_log"] = []
+    #result_dict["year_only_log"] = []
 
     if year_range != None and len(year_range) == 2:
         start_year = year_range[0]
@@ -1401,10 +1436,10 @@ def getEthnicgroups(mycursor, village_id, gazetteerName, year, year_range):
         if start_year > end_year:
             table["data"] = []
             result_dict["year_range_log"] = "Start year should be smaller than end year!"
-            table["year"].append(result_dict)
+            table["year"].append({"ethnicgroups":result_dict})
             return table
 
-    if year != None:
+    if year != None and year!=[]:
         mycursor.execute(
             "SELECT startYear_开始年 FROM  ethnicGroups_民族 WHERE gazetteerId_村志代码={} AND startYear_开始年=endYear_结束年".format(
                 village_id))
@@ -1460,7 +1495,7 @@ def getEthnicgroups(mycursor, village_id, gazetteerName, year, year_range):
                     d["unit"] = item[4]
                     table["data"].append(d)
 
-    if year_range != None:
+    elif year_range != None and len(year_range) == 2:
         mycursor.execute(
             "SELECT startYear_开始年, endYear_结束年 FROM ethnicGroups_民族 WHERE gazetteerId_村志代码={}".format(village_id))
         all_years = mycursor.fetchall()
@@ -1514,7 +1549,7 @@ def getEthnicgroups(mycursor, village_id, gazetteerName, year, year_range):
                 d["data"] = item[3]
                 d["unit"] = item[4]
                 table["data"].append(d)
-    if year_range == None and year == None:
+    else:
 
         mycursor.execute("SELECT ethc.name_名称, eth.startYear_开始年,\
           eth.endYear_结束年,eth.data_数据 ,ethu.name_名称 \
@@ -1530,12 +1565,17 @@ def getEthnicgroups(mycursor, village_id, gazetteerName, year, year_range):
             d["category1"] = item[0]
             d["startYear"] = item[1]
             d["endYear"] = item[2]
+            if d["startYear"]  == d["endYear"] and d["startYear"] not in result_dict["year_only"]:
+                result_dict["year_only"].append(d["startYear"])
+            elif [d["startYear"],d["endYear"]] not in result_dict["year_range"]:
+                result_dict["year_range"].append([d["startYear"],d["endYear"]])
+
             d["data"] = item[3]
             d["unit"] = item[4]
             table["data"].append(d)
 
 
-    table["year"].append(result_dict)
+    table["year"].append({"ethnicgroups":result_dict})
     return table
 
 
@@ -1564,7 +1604,7 @@ def getFourthlastName(mycursor, village_id, gazetteerName, year, year_range):
     d["secondLastNameId"] = l[1]
     d["thirdLastNameId"] = l[2]
     d["fourthLastNameId"] = l[3]
-    d["fifthlastNamesId_姓氏代码"] = l[4]
+    d["fifthlastNamesId"] = l[4]
     d["totalNumberOfLastNameInVillage"] = nameList[0][-1]
 
     table["data"].append(d)
