@@ -1,16 +1,17 @@
 import json
 import os
 import re
-
+import csv
 import mysql.connector
 from flask import Blueprint, jsonify, request, session, send_from_directory
 from flask_cors import CORS
 from status_code import *
+import pandas as pd
 
 advance_blueprint = Blueprint('advancesearch', __name__)
 CORS(advance_blueprint)
 
-@advance_blueprint.route("/yearsearch", methods=["POST", "GET"], strict_slashes=False)
+@advance_blueprint.route("/", methods=["POST", "GET"], strict_slashes=False)
 def advanceSearch():
     data = request.get_data()
     json_data = json.loads(data.decode("utf-8"))
@@ -18,6 +19,9 @@ def advanceSearch():
     topic = json_data.get("topic")
     year = json_data.get("year", None)
     year_range = json_data.get("year_range", None)
+
+    if villageid == None or topic == None:
+        return jsonify({"code":4001,"message":"No village id or topic please try again"})
 
     # Get connection
     mydb = mysql.connector.connect(
@@ -176,7 +180,7 @@ def advanceSearch():
                 for j in res["data"]:
                     newTable["data"].append(j)  # table3~12["data"].append(i) =>
 
-                print("years are", res["year"])
+#                # print("years are", res["year"])
 
                 if "year" in res.keys():
                     for y in res["year"]:
@@ -192,8 +196,77 @@ def advanceSearch():
             continue
         else:
             table.append(temp[index])
+
+    # get current working dir
+    path = os.getcwd()
+    topic2chinese = {"村庄基本信息":"village",
+    "村志基本信息":"gazetteerinformation",
+    "自然灾害":"naturaldisasters",
+    "自然环境":"naturalenvironment",
+    "军事政治":"military",
+    "教育":"education",
+    "经济":"economy",
+    "计划生育":"familyplanning",
+    "人口":"population",
+    "民族":"ethnicgroups",
+    "姓氏":"fourthlastNames",
+    "第一次拥有或购买年份":"firstavailabilityorpurchase"}
+
+    village_id_title = ""
+    for item in topic:
+        village_id_title = villageid[0]
+        for i in villageid[1:]:
+            village_id_title+="_"+i
+        f = open(os.path.join(path,"app_func","multiple_csv","{}_{}.csv".format(village_id_title, item)), 'w', encoding='utf-8')
+
+        csv_writer = csv.writer(f)
+        temp_table = []
+        for j in table:
+            if topic2chinese[j["tableNameChinese"]] == item:
+                temp_table = j
+            else:
+                continue
+
+        title = [i for i in temp_table["field"]]
+
+        if len(title)==1:
+          title = title[0]
+        csv_writer.writerow(title)
+        for item in temp_table["data"]:
+          temp_l = []
+          for ti in title:
+            temp_l.append(item[ti])
+          csv_writer.writerow(temp_l)
+
+
+    mearge_csv(topic, village_id_title)
+
     return jsonify(table)
 
+def mearge_csv(topics, village_id_title):
+    csv_list = []
+    dir_path = os.getcwd()
+    mutiple_dir = os.path.join(dir_path, "app_func", "multiple_csv")
+    for i in topics:
+        csv_list.append(os.path.join(mutiple_dir,village_id_title + "_" + i+".csv"))
+    outputfile = os.path.join(mutiple_dir, village_id_title+".csv")
+    for inputfile in csv_list:
+        f=open(inputfile, encoding="utf-8")
+        try:
+            data=pd.read_csv(f)
+            data.to_csv(outputfile,mode='a',index=False,header=None)
+        except Exception as e:
+            print(e)
+    
+
+@advance_blueprint.route("/download/<path:path>", methods=["GET"], strict_slashes=False)
+def downloadData(path):
+  dir_path = os.getcwd()
+  multiple_dir = os.path.join(dir_path,"app_func","multiple_csv")
+  print("multiple_dir",os.path.join(multiple_dir,path))
+  if os.path.exists(os.path.join(multiple_dir, path+".csv")):
+    return send_from_directory(multiple_dir, path+".csv", as_attachment=True)
+  return jsonify({"code":4003,"message":"File is not exist or file can't download"})
 
 def getVillage(mycursor, village_id, gazetteerName):
     table = {}
@@ -1630,5 +1703,3 @@ def getFirstAvailabilityorPurchase(mycursor, village_id, gazetteerName, year, ye
         table["data"].append(d)
 
     return table
-
-
