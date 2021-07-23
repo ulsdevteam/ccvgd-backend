@@ -615,13 +615,15 @@ def getAll():
   if count_valid == len(table["data"]):
     table["isEmptyTable"] = "True"
 
-    return "This table is empty!"
+    return jsonify({"code":4002, "message":"This table is empty! Please try again"})
   else:
     table["isEmptyTable"] = "False"
     # write into csv
-    f = open('/home/yuelv/CCVG/app_func/single_csv/{}_{}'.format(village_id, topic), 'w', encoding='utf-8')
-
+    path = os.getcwd()
+    f = open(os.path.join(path,"app_func","single_csv","{}_{}.csv".format(village_id, topic)), 'w', encoding='utf-8')
     # f = open('/home/yuelv/CCVG/app_func/single_csv/{}_{}.csv'.format(village_id, topic), 'w', encoding='utf-8')
+    
+    
     csv_writer = csv.writer(f)
     title = [i for i in table["field"]]
     if len(title)==1:
@@ -693,171 +695,171 @@ def getByName():
   return jsonify(table)
 
 
-@village_blueprint.route("/advancesearch", methods=["POST"], strict_slashes=False)
-def advanceSearch():
-  data = request.get_data()
-  json_data = json.loads(data.decode("utf-8"))
-  villageid = json_data.get("villageid")
-  topic = json_data.get("topic")
-  year = json_data.get("year")
-  year_range = json_data.get("year_range")
-
-  # Get connection
-  mydb = mysql.connector.connect(
-    host="localhost",
-    user="root",
-    password="123456",
-    port=3306,
-    database="CCVG")
-  mycursor = mydb.cursor()
-
-  topics = ["village", "gazetteerinformation", "naturaldisasters", "naturalenvironment", "military", "education",
-            "economy", "familyplanning",
-            "population", "ethnicgroups", "fourthlastNames", "firstavailabilityorpurchase"]
-  # get every topics' index in the
-  indexes = []
-  for i in topic:
-    if i not in topics:
-      return "topics is not fullfil requirement"
-    else:
-      indexes.append(topics.index(i) + 1)
-
-  dicts = {}
-  table = []
-
-  table1 = {}
-  table1["field"] = ["gazetteerId", "gazetteerName", "villageId", "villageName", "province", "city", "county",
-                     "category1",
-                     "data", "unit"]
-  table1["data"] = []
-  table1["tableNameChinese"] = "村庄基本信息"
-  dicts[1] = table1
-
-  table2 = {}
-  table2["field"] = ["villageId", "villageName", "gazetteerId", "gazetteerName", "publishYear", "publishType"]
-  table2["data"] = []
-  table2["tableNameChinese"] = "村志基本信息"
-  dicts[2] = table2
-
-  table3 = {}
-  table3["field"] = ["gazetteerName", "gazetteerId", "year", "category1"],
-  table3["data"] = []
-  table3["tableNameChinese"] = "自然灾害"
-  dicts[3] = table3
-
-  table4 = {}
-  table4["field"] = ["gazetteerName", "gazetteerId", "category1", "data", "unit"]
-  table4["data"] = []
-  table4["tableNameChinese"] = "自然环境"
-  dicts[4] = table4
-
-  table5 = {}
-  table5["field"] = ["gazetteerName", "gazetteerId", "category1", "category2", "startYear", "endYear", "data", "unit"]
-  table5["data"] = []
-  table5["tableNameChinese"] = "军事政治"
-  dicts[5] = table5
-
-  table6 = {}
-  table6["field"] = ["gazetteerName", "gazetteerId", "category1", "category2", "startYear", "endYear",
-                     "data",
-                     "unit"]
-  table6["data"] = []
-  table6["tableNameChinese"] = "教育"
-  dicts[6] = table6
-
-  table7 = {}
-  table7["field"] = ["gazetteerName", "gazetteerId", "category1", "category2", "category3", "startYear", "endYear",
-                     "data",
-                     "unit"]
-  table7["data"] = []
-  table7["tableNameChinese"] = "经济"
-  dicts[7] = table7
-
-  table8 = {}
-  table8["field"] = ["gazetteerName", "gazetteerId", "category", "startYear", "endYear", "data", "unit"]
-  table8["data"] = []
-  table8["tableNameChinese"] = "计划生育"
-  dicts[8] = table8
-
-  table9 = {}
-  table9["field"] = ['gazetteerName', 'gazetteerId', 'category1', 'category2', 'startYear', 'endYear', 'data', 'unit']
-  table9["data"] = []
-  table9["tableNameChinese"] = "人口"
-  dicts[9] = table9
-
-  table10 = {}
-  table10["field"] = ["gazetteerName", "gazetteerId", "category1", "startYear", "endYear", "data", "unit"]
-  table10["data"] = []
-  table10["tableNameChinese"] = "民族"
-  dicts[10] = table10
-
-  table11 = {}
-  table11["field"] = ["gazetteerName", "gazetteerId", "firstLastNameId", "secondLastNameId", "thirdLastNameId",
-                      "fourthLastNameId",
-                      "fifthLastNameId", "totalNumberOfLastNameInVillage"]
-  table11["data"] = []
-  table11["tableNameChinese"] = "姓氏"
-  dicts[11] = table11
-
-  table12 = {}
-  table12["field"] = ["gazetteerName", "gazetteerId", "category", "year"]
-  table12["data"] = []
-  table12["tableNameChinese"] = "第一次拥有或购买年份"
-  dicts[12] = table12
-
-  table2func = {}
-  table2func[3] = getNaturalDisaster
-  table2func[4] = getNaturalEnvironment
-  table2func[5] = getMilitary
-  table2func[6] = getEduaction
-  table2func[7] = getEconomy
-  table2func[8] = getFamilyPlanning
-  table2func[9] = getPopulation
-  table2func[10] = getEthnicgroups
-  table2func[11] = getFourthlastName
-  table2func[12] = getFirstAvailabilityorPurchase
-
-  # For every node in the village and we want to change
-  temp = {}
-  for village_id in villageid:
-    mycursor.execute(
-      "SELECT gazetteerTitle_村志书名 FROM gazetteerInformation_村志信息 WHERE gazetteerId_村志代码={}".format(village_id))
-    gazetteerName = mycursor.fetchone()[0]
-
-    for i in getVillage(mycursor, village_id, gazetteerName)["data"]:
-      table1["data"].append(i)
-    for i in getGazetteer(mycursor, village_id, gazetteerName)["data"]:
-      table2["data"].append(i)
-
-    for index in indexes:
-      newTable = dicts[index]  # table3~12
-      temp[index] = newTable  # {3: table3...}
-      if index == 1 or index == 2:
-        continue
-      else:
-        func = table2func[index]
-        for j in func(mycursor, village_id, gazetteerName)["data"]:
-          newTable["data"].append(j)  # table3~12["data"].append(i) =>
-
-  table.append(table1)
-  table.append(table2)
-  for index in indexes:
-    if index == 1 or index == 2:
-      continue
-    else:
-      table.append(temp[index])
-  return jsonify(table)
-
+# @village_blueprint.route("/advancesearch", methods=["POST"], strict_slashes=False)
+# def advanceSearch():
+#   data = request.get_data()
+#   json_data = json.loads(data.decode("utf-8"))
+#   villageid = json_data.get("villageid")
+#   topic = json_data.get("topic")
+#   year = json_data.get("year")
+#   year_range = json_data.get("year_range")
+#
+#   # Get connection
+#   mydb = mysql.connector.connect(
+#     host="localhost",
+#     user="root",
+#     password="123456",
+#     port=3306,
+#     database="CCVG")
+#   mycursor = mydb.cursor()
+#
+#   topics = ["village", "gazetteerinformation", "naturaldisasters", "naturalenvironment", "military", "education",
+#             "economy", "familyplanning",
+#             "population", "ethnicgroups", "fourthlastNames", "firstavailabilityorpurchase"]
+#   # get every topics' index in the
+#   indexes = []
+#   for i in topic:
+#     if i not in topics:
+#       return "topics is not fullfil requirement"
+#     else:
+#       indexes.append(topics.index(i) + 1)
+#
+#   dicts = {}
+#   table = []
+#
+#   table1 = {}
+#   table1["field"] = ["gazetteerId", "gazetteerName", "villageId", "villageName", "province", "city", "county",
+#                      "category1",
+#                      "data", "unit"]
+#   table1["data"] = []
+#   table1["tableNameChinese"] = "村庄基本信息"
+#   dicts[1] = table1
+#
+#   table2 = {}
+#   table2["field"] = ["villageId", "villageName", "gazetteerId", "gazetteerName", "publishYear", "publishType"]
+#   table2["data"] = []
+#   table2["tableNameChinese"] = "村志基本信息"
+#   dicts[2] = table2
+#
+#   table3 = {}
+#   table3["field"] = ["gazetteerName", "gazetteerId", "year", "category1"],
+#   table3["data"] = []
+#   table3["tableNameChinese"] = "自然灾害"
+#   dicts[3] = table3
+#
+#   table4 = {}
+#   table4["field"] = ["gazetteerName", "gazetteerId", "category1", "data", "unit"]
+#   table4["data"] = []
+#   table4["tableNameChinese"] = "自然环境"
+#   dicts[4] = table4
+#
+#   table5 = {}
+#   table5["field"] = ["gazetteerName", "gazetteerId", "category1", "category2", "startYear", "endYear", "data", "unit"]
+#   table5["data"] = []
+#   table5["tableNameChinese"] = "军事政治"
+#   dicts[5] = table5
+#
+#   table6 = {}
+#   table6["field"] = ["gazetteerName", "gazetteerId", "category1", "category2", "startYear", "endYear",
+#                      "data",
+#                      "unit"]
+#   table6["data"] = []
+#   table6["tableNameChinese"] = "教育"
+#   dicts[6] = table6
+#
+#   table7 = {}
+#   table7["field"] = ["gazetteerName", "gazetteerId", "category1", "category2", "category3", "startYear", "endYear",
+#                      "data",
+#                      "unit"]
+#   table7["data"] = []
+#   table7["tableNameChinese"] = "经济"
+#   dicts[7] = table7
+#
+#   table8 = {}
+#   table8["field"] = ["gazetteerName", "gazetteerId", "category", "startYear", "endYear", "data", "unit"]
+#   table8["data"] = []
+#   table8["tableNameChinese"] = "计划生育"
+#   dicts[8] = table8
+#
+#   table9 = {}
+#   table9["field"] = ['gazetteerName', 'gazetteerId', 'category1', 'category2', 'startYear', 'endYear', 'data', 'unit']
+#   table9["data"] = []
+#   table9["tableNameChinese"] = "人口"
+#   dicts[9] = table9
+#
+#   table10 = {}
+#   table10["field"] = ["gazetteerName", "gazetteerId", "category1", "startYear", "endYear", "data", "unit"]
+#   table10["data"] = []
+#   table10["tableNameChinese"] = "民族"
+#   dicts[10] = table10
+#
+#   table11 = {}
+#   table11["field"] = ["gazetteerName", "gazetteerId", "firstLastNameId", "secondLastNameId", "thirdLastNameId",
+#                       "fourthLastNameId",
+#                       "fifthLastNameId", "totalNumberOfLastNameInVillage"]
+#   table11["data"] = []
+#   table11["tableNameChinese"] = "姓氏"
+#   dicts[11] = table11
+#
+#   table12 = {}
+#   table12["field"] = ["gazetteerName", "gazetteerId", "category", "year"]
+#   table12["data"] = []
+#   table12["tableNameChinese"] = "第一次拥有或购买年份"
+#   dicts[12] = table12
+#
+#   table2func = {}
+#   table2func[3] = getNaturalDisaster
+#   table2func[4] = getNaturalEnvironment
+#   table2func[5] = getMilitary
+#   table2func[6] = getEduaction
+#   table2func[7] = getEconomy
+#   table2func[8] = getFamilyPlanning
+#   table2func[9] = getPopulation
+#   table2func[10] = getEthnicgroups
+#   table2func[11] = getFourthlastName
+#   table2func[12] = getFirstAvailabilityorPurchase
+#
+#   # For every node in the village and we want to change
+#   temp = {}
+#   for village_id in villageid:
+#     mycursor.execute(
+#       "SELECT gazetteerTitle_村志书名 FROM gazetteerInformation_村志信息 WHERE gazetteerId_村志代码={}".format(village_id))
+#     gazetteerName = mycursor.fetchone()[0]
+#
+#     for i in getVillage(mycursor, village_id, gazetteerName)["data"]:
+#       table1["data"].append(i)
+#     for i in getGazetteer(mycursor, village_id, gazetteerName)["data"]:
+#       table2["data"].append(i)
+#
+#     for index in indexes:
+#       newTable = dicts[index]  # table3~12
+#       temp[index] = newTable  # {3: table3...}
+#       if index == 1 or index == 2:
+#         continue
+#       else:
+#         func = table2func[index]
+#         for j in func(mycursor, village_id, gazetteerName)["data"]:
+#           newTable["data"].append(j)  # table3~12["data"].append(i) =>
+#
+#   table.append(table1)
+#   table.append(table2)
+#   for index in indexes:
+#     if index == 1 or index == 2:
+#       continue
+#     else:
+#       table.append(temp[index])
+#   return jsonify(table)
+#
 
 @village_blueprint.route("/download/<path:path>", methods=["GET"], strict_slashes=False)
 def downloadData(path):
-  single_dir = "/home/yuelv/CCVG/app_func/single_csv"
-  is_single = True
-  if "&" in path:
-    is_single = False
-  if os.path.exists(single_dir + "/" + path) and is_single:
-    return send_from_directory(single_dir + "/", path, as_attachment=True)
-  return "File is not exist or file can't download"
+  dir_path = os.getcwd()
+  single_dir = os.path.join(dir_path,"app_func","single_csv")
+  print("path is",os.path.join(single_dir, path))
+
+  if os.path.exists(os.path.join(single_dir, path)):
+    return send_from_directory(single_dir, path, as_attachment=True)
+  return jsonify({"code":4003,"message":"File is not exist or file can't download"})
 
 
 def getVillage(mycursor, village_id, gazetteerName):
