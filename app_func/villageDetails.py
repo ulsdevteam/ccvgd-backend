@@ -851,12 +851,15 @@ def getByName():
 #   return jsonify(table)
 #
 
-@village_blueprint.route("/download/<path:path>", methods=["GET"], strict_slashes=False)
-def downloadData(path):
+@village_blueprint.route("/download/", methods=["GET"], strict_slashes=False)
+def downloadData():
   dir_path = os.getcwd()
   single_dir = os.path.join(dir_path,"app_func","single_csv")
-  print("path is",os.path.join(single_dir, path))
+  # print("path is",os.path.join(single_dir, path))
+  village_id = request.args.get("village")
+  topic = request.args.get("topic", None)
 
+  path = village_id+"_"+topic
   if os.path.exists(os.path.join(single_dir, path)):
     return send_from_directory(single_dir, path, as_attachment=True)
   return jsonify({"code":4003,"message":"File is not exist or file can't download"})
