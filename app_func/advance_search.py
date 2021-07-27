@@ -269,12 +269,11 @@ def downloadData():
   village_id = request.args.get("village")
   topic = request.args.get("topic",None)
   multiple_dir = os.path.join(dir_path,"app_func","multiple_csv")
-  village_list = village_id[0]
 
   if topic ==None:
     path = village_id
   else:
-    path = village_list+"_"+topic
+    path = village_id+"_"+topic
 
   print("multiple_dir",os.path.join(multiple_dir,path))
   if os.path.exists(os.path.join(multiple_dir, path+".csv")):
@@ -1716,5 +1715,3 @@ def getFirstAvailabilityorPurchase(mycursor, village_id, gazetteerName, year, ye
         table["data"].append(d)
 
     return table
-
-
