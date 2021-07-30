@@ -8,6 +8,7 @@ from flask import Blueprint, jsonify, request, session, send_from_directory
 from flask_cors import CORS
 # from app import app
 from status_code import *
+from config import *
 import pandas as pd
 from werkzeug.routing import BaseConverter
 
@@ -29,11 +30,12 @@ def advanceSearch():
 
     # Get connection
     mydb = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="123456",
-        port=3306,
-        database="CCVG")
+        host=mysql_host,
+        user=mysql_username,
+        password=mysql_password,
+        port=mysql_port,
+        database=mysql_database)
+    
     mycursor = mydb.cursor()
 
     topics = ["village", "gazetteerinformation", "naturaldisasters", "naturalenvironment", "military", "education",
