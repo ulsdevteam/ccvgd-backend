@@ -1,6 +1,13 @@
 import hashlib
 import os
 
+# Please change default here!
+mysql_host = "localhost"
+mysql_username = "root"
+mysql_password = "123456"
+mysql_port = 3306
+mysql_database = "CCVG"
+
 class Config:
   DEBUG = False
   JSON_AS_ASCII = False
