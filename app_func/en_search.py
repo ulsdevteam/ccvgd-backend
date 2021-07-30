@@ -7,6 +7,7 @@ import mysql.connector
 from flask import Blueprint, jsonify, request, session, send_from_directory
 from flask_cors import CORS
 from status_code import *
+from config import *
 en_blueprint = Blueprint('en', __name__)
 CORS(en_blueprint)
 
@@ -26,11 +27,11 @@ def getAll():
 
   # Get connection
   mydb = mysql.connector.connect(
-    host="localhost",
-    user="root",
-    password="123456",
-    port=3306,
-    database="CCVG")
+    host=mysql_host,
+    user=mysql_username,
+    password=mysql_password,
+    port=mysql_port,
+    database=mysql_database)
   mycursor = mydb.cursor()
 
   # Get gazetteerName
@@ -637,11 +638,11 @@ def getByName():
   table["data"] = []
 
   mydb = mysql.connector.connect(
-    host="localhost",
-    user="root",
-    password="123456",
-    port=3306,
-    database="CCVG")
+        host=mysql_host,
+        user=mysql_username,
+        password=mysql_password,
+        port=mysql_port,
+        database=mysql_database)
   mycursor = mydb.cursor()
 
   if request.method == "GET":
@@ -699,11 +700,11 @@ def advanceSearch():
 
   # Get connection
   mydb = mysql.connector.connect(
-    host="localhost",
-    user="root",
-    password="123456",
-    port=3306,
-    database="CCVG")
+        host=mysql_host,
+        user=mysql_username,
+        password=mysql_password,
+        port=mysql_port,
+        database=mysql_database)
   mycursor = mydb.cursor()
 
   topics = ["village", "gazetteerinformation", "naturaldisasters", "naturalenvironment", "military", "education",
