@@ -3,15 +3,15 @@ import os
 import re
 import csv
 import mysql.connector
+import pandas as pd
 
+from werkzeug.routing import BaseConverter
 from flask import Blueprint, jsonify, request, session, send_from_directory
 from flask_cors import CORS
-# from app import app
-from status_code import *
-from config import *
-import pandas as pd
-from werkzeug.routing import BaseConverter
 
+from config import *
+from .utils import get_dicts
+from status_code import *
 
 advance_blueprint = Blueprint('advancesearch', __name__)
 CORS(advance_blueprint)
@@ -28,20 +28,18 @@ def advanceSearch():
     if villageid == None or topic == None:
         return jsonify({"code":4001,"message":"No village id or topic please try again"})
 
-    # Get connection
+
     mydb = mysql.connector.connect(
-        host=mysql_host,
-        user=mysql_username,
-        password=mysql_password,
-        port=mysql_port,
-        database=mysql_database)
-    
+    host=mysql_host,
+    user=mysql_username,
+    password=mysql_password,
+    port=mysql_port,
+    database=mysql_database)
     mycursor = mydb.cursor()
 
     topics = ["village", "gazetteerinformation", "naturaldisasters", "naturalenvironment", "military", "education",
               "economy", "familyplanning",
               "population", "ethnicgroups", "fourthlastNames", "firstavailabilityorpurchase"]
-    # get every topics' index in the
     indexes = []
     for i in topic:
         if i not in topics:
@@ -49,9 +47,9 @@ def advanceSearch():
         else:
             indexes.append(topics.index(i) + 1)
 
-    dicts = {}
-    table = []
 
+    table = []
+    dicts = get_dicts()
     table1 = {}
     table1["field"] = ["gazetteerId", "gazetteerName", "villageId", "villageName", "province", "city", "county",
                        "category1",
@@ -67,87 +65,7 @@ def advanceSearch():
     table2["tableNameChinese"] = "村志基本信息"
     dicts[2] = table2
 
-    # 自然灾害
-    table3 = {}
-    table3["field"] = ["gazetteerName", "gazetteerId", "year", "category1"],
-    table3["data"] = []
-    table3["year"] = []
-    table3["tableNameChinese"] = "自然灾害"
-    dicts[3] = table3
 
-    table4 = {}
-    table4["field"] = ["gazetteerName", "gazetteerId", "category1", "data", "unit"]
-    table4["data"] = []
-    table4["tableNameChinese"] = "自然环境"
-    dicts[4] = table4
-
-    # 军事
-    table5 = {}
-    table5["field"] = ["gazetteerName", "gazetteerId", "category1", "category2", "startYear", "endYear", "data", "unit"]
-    table5["data"] = []
-    table5["year"] = []
-    table5["tableNameChinese"] = "军事政治"
-    dicts[5] = table5
-
-    # 教育
-    table6 = {}
-    table6["field"] = ["gazetteerName", "gazetteerId", "category1", "category2", "startYear", "endYear",
-                       "data",
-                       "unit"]
-    table6["data"] = []
-    table6["tableNameChinese"] = "教育"
-    table6["year"] = []
-    dicts[6] = table6
-
-    # 经济
-    table7 = {}
-    table7["field"] = ["gazetteerName", "gazetteerId", "category1", "category2", "category3", "startYear", "endYear",
-                       "data",
-                       "unit"]
-    table7["data"] = []
-    table7["year"] = []
-    table7["tableNameChinese"] = "经济"
-    dicts[7] = table7
-
-    # 计划生育
-    table8 = {}
-    table8["field"] = ["gazetteerName", "gazetteerId", "category", "startYear", "endYear", "data", "unit"]
-    table8["data"] = []
-    table8["year"] = []
-    table8["tableNameChinese"] = "计划生育"
-    dicts[8] = table8
-
-    # 人口
-    table9 = {}
-    table9["field"] = ['gazetteerName', 'gazetteerId', 'category1', 'category2', 'startYear', 'endYear', 'data', 'unit']
-    table9["data"] = []
-    table9["year"] = []
-    table9["tableNameChinese"] = "人口"
-    dicts[9] = table9
-
-    # 民族
-    table10 = {}
-    table10["field"] = ["gazetteerName", "gazetteerId", "category1", "startYear", "endYear", "data", "unit"]
-    table10["data"] = []
-    table10["year"] = []
-    table10["tableNameChinese"] = "民族"
-    dicts[10] = table10
-
-    table11 = {}
-    table11["field"] = ["gazetteerName", "gazetteerId", "firstLastNameId", "secondLastNameId", "thirdLastNameId",
-                        "fourthLastNameId",
-                        "fifthLastNameId", "totalNumberOfLastNameInVillage"]
-    table11["data"] = []
-    table11["tableNameChinese"] = "姓氏"
-    dicts[11] = table11
-
-    # 第一次购买年份
-    table12 = {}
-    table12["field"] = ["gazetteerName", "gazetteerId", "category", "year"]
-    table12["data"] = []
-    table12["year"] = []
-    table12["tableNameChinese"] = "第一次拥有或购买年份"
-    dicts[12] = table12
 
     table2func = {}
     table2func[3] = getNaturalDisaster
@@ -166,7 +84,11 @@ def advanceSearch():
     for village_id in villageid:
         mycursor.execute(
             "SELECT gazetteerTitle_村志书名 FROM gazetteerInformation_村志信息 WHERE gazetteerId_村志代码={}".format(village_id))
-        gazetteerName = mycursor.fetchone()[0]
+        result = mycursor.fetchone()
+        if result ==None:
+            return jsonify({"code":4004,"message":"The village id {} is not exsit! Please change.".format(village_id)})
+
+        gazetteerName = result[0]
 
         for i in getVillage(mycursor, village_id, gazetteerName)["data"]:
             table1["data"].append(i)
@@ -185,8 +107,6 @@ def advanceSearch():
 
                 for j in res["data"]:
                     newTable["data"].append(j)  # table3~12["data"].append(i) =>
-
-#                # print("years are", res["year"])
 
                 if "year" in res.keys():
                     for y in res["year"]:
@@ -238,12 +158,12 @@ def advanceSearch():
         if len(title)==1:
           title = title[0]
         csv_writer.writerow(title)
+
         for item in temp_table["data"]:
           temp_l = []
           for ti in title:
             temp_l.append(item[ti])
           csv_writer.writerow(temp_l)
-
 
     mearge_csv(topic, village_id_title)
 
@@ -1675,6 +1595,9 @@ def getFourthlastName(mycursor, village_id, gazetteerName, year, year_range):
     nameList = mycursor.fetchall()
 
     l = []
+    if len(nameList) == 0:
+        print("This village id is not have fourth last name")
+        return table
     for z in range(len(nameList[0]) - 1):
         if nameList[0][z] == None:
             l.append("")
@@ -1691,7 +1614,7 @@ def getFourthlastName(mycursor, village_id, gazetteerName, year, year_range):
     d["secondLastNameId"] = l[1]
     d["thirdLastNameId"] = l[2]
     d["fourthLastNameId"] = l[3]
-    d["fifthlastNameId"] = l[4]
+    d["fifthLastNameId"] = l[4]
     d["totalNumberOfLastNameInVillage"] = nameList[0][-1]
 
     table["data"].append(d)
