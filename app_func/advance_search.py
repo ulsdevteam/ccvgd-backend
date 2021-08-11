@@ -1691,7 +1691,7 @@ def getFourthlastName(mycursor, village_id, gazetteerName, year, year_range):
     d["secondLastNameId"] = l[1]
     d["thirdLastNameId"] = l[2]
     d["fourthLastNameId"] = l[3]
-    d["fifthlastNamesId"] = l[4]
+    d["fifthlastNameId"] = l[4]
     d["totalNumberOfLastNameInVillage"] = nameList[0][-1]
 
     table["data"].append(d)
