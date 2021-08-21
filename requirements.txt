@@ -36,10 +36,10 @@ loguru==0.5.3
 lxml==3.8.0
 Mako==1.1.4
 Markdown==3.1.1
-MarkupSafe==1.0
+MarkupSafe
 memory-profiler==0.43
 mistune==0.7.4
-mysql-connector-python==2.0.4
+mysql-connector-python
 nbconvert==5.2.1
 nbformat==4.4.0
 nest-asyncio==1.5.1
