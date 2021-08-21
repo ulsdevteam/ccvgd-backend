@@ -19,8 +19,7 @@ import mysql.connector
 #  ssh -i ~/.ssh/id_rsa yuelv@ngrok.luozm.me -p 6655
 
 app = create_app(DevlopConfig)
-app.secret_key = "1234"
-app.port=5010
+
 
 
 manager = Manager(app)
