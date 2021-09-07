@@ -15,21 +15,21 @@ def get_dicts():
     dicts = {}
     # 自然灾害
     table3 = {}
-    table3["field"] = ["gazetteerName", "gazetteerId", "year", "category1"],
+    table3["field"] = ["villageId","gazetteerName", "gazetteerId", "year", "category1"]
     table3["data"] = []
     table3["year"] = []
     table3["tableNameChinese"] = "自然灾害"
     dicts[3] = table3
 
     table4 = {}
-    table4["field"] = ["gazetteerName", "gazetteerId", "category1", "data", "unit"]
+    table4["field"] = ["villageId","gazetteerName", "gazetteerId", "category1", "data", "unit"]
     table4["data"] = []
     table4["tableNameChinese"] = "自然环境"
     dicts[4] = table4
 
     # 军事
     table5 = {}
-    table5["field"] = ["gazetteerName", "gazetteerId", "category1", "category2", "startYear", "endYear", "data", "unit"]
+    table5["field"] = ["villageId","gazetteerName", "gazetteerId", "category1", "category2", "startYear", "endYear", "data", "unit"]
     table5["data"] = []
     table5["year"] = []
     table5["tableNameChinese"] = "军事政治"
@@ -37,7 +37,7 @@ def get_dicts():
 
     # 教育
     table6 = {}
-    table6["field"] = ["gazetteerName", "gazetteerId", "category1", "category2", "startYear", "endYear",
+    table6["field"] = ["villageId","gazetteerName", "gazetteerId", "category1", "category2", "startYear", "endYear",
                        "data",
                        "unit"]
     table6["data"] = []
@@ -47,7 +47,7 @@ def get_dicts():
 
     # 经济
     table7 = {}
-    table7["field"] = ["gazetteerName", "gazetteerId", "category1", "category2", "category3", "startYear", "endYear",
+    table7["field"] = ["villageId","gazetteerName", "gazetteerId", "category1", "category2", "category3", "startYear", "endYear",
                        "data",
                        "unit"]
     table7["data"] = []
@@ -57,7 +57,7 @@ def get_dicts():
 
     # 计划生育
     table8 = {}
-    table8["field"] = ["gazetteerName", "gazetteerId", "category", "startYear", "endYear", "data", "unit"]
+    table8["field"] = ["villageId","gazetteerName", "gazetteerId", "category1", "startYear", "endYear", "data", "unit"]
     table8["data"] = []
     table8["year"] = []
     table8["tableNameChinese"] = "计划生育"
@@ -65,7 +65,7 @@ def get_dicts():
 
     # 人口
     table9 = {}
-    table9["field"] = ['gazetteerName', 'gazetteerId', 'category1', 'category2', 'startYear', 'endYear', 'data', 'unit']
+    table9["field"] = ["villageId",'gazetteerName', 'gazetteerId', 'category1', 'category2', 'startYear', 'endYear', 'data', 'unit']
     table9["data"] = []
     table9["year"] = []
     table9["tableNameChinese"] = "人口"
@@ -73,14 +73,14 @@ def get_dicts():
 
     # 民族
     table10 = {}
-    table10["field"] = ["gazetteerName", "gazetteerId", "category1", "startYear", "endYear", "data", "unit"]
+    table10["field"] = ["villageId","gazetteerName", "gazetteerId", "category1", "startYear", "endYear", "data", "unit"]
     table10["data"] = []
     table10["year"] = []
     table10["tableNameChinese"] = "民族"
     dicts[10] = table10
 
     table11 = {}
-    table11["field"] = ["gazetteerName", "gazetteerId", "firstLastNameId", "secondLastNameId", "thirdLastNameId",
+    table11["field"] = ["villageId","gazetteerName", "gazetteerId", "firstLastNameId", "secondLastNameId", "thirdLastNameId",
                         "fourthLastNameId",
                         "fifthLastNameId", "totalNumberOfLastNameInVillage"]
     table11["data"] = []
@@ -89,7 +89,7 @@ def get_dicts():
 
     # 第一次购买年份
     table12 = {}
-    table12["field"] = ["gazetteerName", "gazetteerId", "category", "year"]
+    table12["field"] = ["villageId","gazetteerName", "gazetteerId", "category1", "year"]
     table12["data"] = []
     table12["year"] = []
     table12["tableNameChinese"] = "第一次拥有或购买年份"
