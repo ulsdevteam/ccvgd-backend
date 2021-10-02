@@ -78,7 +78,7 @@ If you want to see details inside this docker file, just use `docker exec -it cc
 ### This compose function I write in **docker-compose.yml**
 
 ```
-version: "1"
+version: "2.2"
 services:
   mysql:
     image: mysql:5.7
@@ -98,6 +98,8 @@ services:
 ```
 
 The build path of this ccvg I set `build: ./` so the absolute path of this docker-compose.yml is "./ccvgd-backend/docker-compose.yml"
+
+And the `version` here I set 2.2. 
 
 ## Use command `docker-compose up` to compose.
 
