@@ -5,8 +5,15 @@ from datetime import datetime
 from flask import current_app
 from manager import create_app
 from config import DevlopConfig
-
-
+#
+# 1949,
+#                                 1953,
+#                                 1964,
+#                                 1982,
+#                                 1990,
+#                                 2000,
+#                                 2007,
+#                                 1951
 app = create_app(DevlopConfig)
 
 db = SQLAlchemy(app)

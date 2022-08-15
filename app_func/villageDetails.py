@@ -30,12 +30,21 @@ def getAll():
     return "Topic not in the 12 tables"
 
   # Get connection
+  # mydb = mysql.connector.connect(
+  #   host="localhost",
+  #   user="root",
+  #   password="123456",
+  #   port=3306,
+  #   database="CCVG")
+
   mydb = mysql.connector.connect(
-        host=mysql_host,
-        user=mysql_username,
-        password=mysql_password,
-        port=mysql_port,
-        database=mysql_database)
+    host=mysql_host,
+    user=mysql_username,
+    password=mysql_password,
+    port=mysql_port,
+    database=mysql_database)
+
+
   mycursor = mydb.cursor()
 
   # Get gazetteerName
@@ -71,7 +80,7 @@ def getAll():
     villageName = allNames[3]
 
     mycursor.execute(
-      "SELECT a.data_数据, b.name_名称, c.name_名称 FROM villageGeography_村庄地理 as a ,villageGeographyCategory_村庄地理类 as b, villageGeographyUnit_村庄地理单位 as c WHERE a.villageInnerId_村庄内部代码={} AND a.categoryId_类别代码 = b.categoryId_类别代码 AND a.unitId_单位代码=c.unitId_单位代码".format(
+      "SELECT a.data_数据, b.name_名称, c.name_名称 FROM villageGeography_村庄地理 as a ,villageGeographyCategory_村庄地理类 as b, villageGeographyUnit_村庄地理单位 as c WHERE a.gazetteerId_村志代码={} AND a.categoryId_类别代码 = b.categoryId_类别代码 AND a.unitId_单位代码=c.unitId_单位代码".format(
         village_id))
     geographyList = mycursor.fetchall()
     for item in geographyList:
@@ -128,7 +137,7 @@ def getAll():
     table["filter"].append(filters)
 
     mycursor.execute(
-      "SELECT b.name_名称, a.year_年份 FROM naturalDisasters_自然灾害 as a, naturalDisastersCategory_自然灾害类 as b WHERE villageInnerId_村庄内部代码={} AND a.categoryId_类别代码=b.categoryId_类别代码".format(
+      "SELECT b.name_名称, a.year_年份 FROM naturalDisasters_自然灾害 as a, naturalDisastersCategory_自然灾害类 as b WHERE gazetteerId_村志代码={} AND a.categoryId_类别代码=b.categoryId_类别代码".format(
         village_id))
     disasterList = mycursor.fetchall()
 
@@ -157,7 +166,7 @@ def getAll():
 
     mycursor.execute(
       "SELECT a.data_数据, b.name_名称, c.name_名称 FROM naturalEnvironment_自然环境 as a, naturalEnvironmentCategory_自然环境类 as b,naturalEnvironmentUnit_自然环境单位 as c \
-      WHERE villageInnerId_村庄内部代码={} AND a.categoryId_类别代码=b.categoryId_类别代码 \
+      WHERE gazetteerId_村志代码={} AND a.categoryId_类别代码=b.categoryId_类别代码 \
       AND a.unitId_单位代码=c.unitId_单位代码".format(village_id))
 
     naturalList = mycursor.fetchall()
@@ -623,8 +632,8 @@ def getAll():
     path = os.getcwd()
     f = open(os.path.join(path,"app_func","single_csv","{}_{}.csv".format(village_id, topic)), 'w', encoding='utf-8')
     # f = open('/home/yuelv/CCVG/app_func/single_csv/{}_{}.csv'.format(village_id, topic), 'w', encoding='utf-8')
-    
-    
+
+
     csv_writer = csv.writer(f)
     title = [i for i in table["field"]]
     if len(title)==1:
@@ -638,62 +647,129 @@ def getAll():
 
     return jsonify(table)
 
+#
+# @village_blueprint.route("/namesearch", methods=["GET", "POST"], strict_slashes=False)
+# def getByName():
+#   table = {}
+#   table["data"] = []
+# 
+#   # mydb = mysql.connector.connect(
+#   #   host="localhost",
+#   #   user="root",
+#   #   password="123456",
+#   #   port=3306,
+#   #   database="CCVG")
+#   mydb = mysql.connector.connect(
+#     host=mysql_host,
+#     user=mysql_username,
+#     password=mysql_password,
+#     port=mysql_port,
+#     database=mysql_database)
+# 
+#   mycursor = mydb.cursor()
+# 
+#   if request.method == "GET":
+#     mycursor.execute("SELECT village.nameChineseCharacters_村名汉字, county.nameChineseCharacters_县或区汉字, city.nameChineseCharacters_市汉字, province.nameChineseCharacters_省汉字, jointable.gazetteerId_村志代码 \
+#      FROM county_县 county JOIN villageCountyCityProvince_村县市省 jointable ON county.countyDistrictId_县或区代码=jointable.countyDistrictId_县或区代码 \
+#     JOIN  city_市 city ON city.cityId_市代码 = jointable.cityId_市代码 JOIN province_省 province ON province.provinceId_省代码=jointable.provinceId_省代码 JOIN  village_村 village ON village.gazetteerId_村志代码= jointable.gazetteerId_村志代码 LIMIT 100;")
+#     nameList = mycursor.fetchall()
+# 
+#   else:
+# 
+#     data = request.get_data()
+#     json_data = json.loads(data.decode("utf-8"))
+#     namefilter = json_data.get("namefilter")
+#     if len(namefilter) == 0 or namefilter == " ":
+#       return "No paramters in namefilter"
+# 
+#     else:
+#       name_check = re.compile(r'[A-Za-z]', re.S)
+#       if len(re.findall(name_check,namefilter)):
+#         print("this is english mode")
+#         mycursor.execute("SELECT village.nameChineseCharacters_村名汉字, county.nameChineseCharacters_县或区汉字, city.nameChineseCharacters_市汉字, province.nameChineseCharacters_省汉字, jointable.gazetteerId_村志代码 \
+#              FROM county_县 county JOIN villageCountyCityProvince_村县市省 jointable ON county.countyDistrictId_县或区代码=jointable.countyDistrictId_县或区代码 \
+#             JOIN  city_市 city ON city.cityId_市代码 = jointable.cityId_市代码 JOIN province_省 province ON province.provinceId_省代码=jointable.provinceId_省代码 JOIN  village_村 village ON village.gazetteerId_村志代码= jointable.gazetteerId_村志代码 WHERE village.nameHanyuPinyin_村名汉语拼音 LIKE '%{}%';".format(
+#           namefilter))
+#       else:
+#         print("this is Chinese mode")
+#         mycursor.execute("SELECT village.nameChineseCharacters_村名汉字, county.nameChineseCharacters_县或区汉字, city.nameChineseCharacters_市汉字, province.nameChineseCharacters_省汉字, jointable.gazetteerId_村志代码 \
+#                      FROM county_县 county JOIN villageCountyCityProvince_村县市省 jointable ON county.countyDistrictId_县或区代码=jointable.countyDistrictId_县或区代码 \
+#                     JOIN  city_市 city ON city.cityId_市代码 = jointable.cityId_市代码 JOIN province_省 province ON province.provinceId_省代码=jointable.provinceId_省代码 JOIN  village_村 village ON village.gazetteerId_村志代码= jointable.gazetteerId_村志代码 WHERE village.nameChineseCharacters_村名汉字 LIKE '%{}%';".format(
+#           namefilter))
+# 
+#       nameList = mycursor.fetchall()
+#       print(nameList)
+# 
+#   for item in nameList:
+#     temp = {}
+#     temp["name"] = item[0]
+#     temp["county"] = item[1]
+#     temp["city"] = item[2]
+#     temp["province"] = item[3]
+#     temp["id"] = str(item[4])
+#     table["data"].append(temp)
+# 
+#   return jsonify(table)
+
 
 @village_blueprint.route("/namesearch", methods=["GET", "POST"], strict_slashes=False)
 def getByName():
-  table = {}
-  table["data"] = []
+    table = {}
+    table["data"] = []
+    conn = mysql.connector.connect(host=mysql_host,
+                           user=mysql_username,
+                           password=mysql_password,
+                           port=mysql_port,
+                           database=mysql_database)
+    mycursor = conn.cursor()
 
-  mydb = mysql.connector.connect(
-        host=mysql_host,
-        user=mysql_username,
-        password=mysql_password,
-        port=mysql_port,
-        database=mysql_database)
-  mycursor = mydb.cursor()
-
-  if request.method == "GET":
-    mycursor.execute("SELECT village.nameChineseCharacters_村名汉字, county.nameChineseCharacters_县或区汉字, city.nameChineseCharacters_市汉字, province.nameChineseCharacters_省汉字, jointable.villageInnerId_村庄内部代码 \
+    if request.method == "GET":
+        pageNumber = int(request.args.get("pageNumber"))
+        sql = "SELECT village.nameChineseCharacters_村名汉字, county.nameChineseCharacters_县或区汉字, city.nameChineseCharacters_市汉字, province.nameChineseCharacters_省汉字, jointable.villageInnerId_村庄内部代码 \
      FROM county_县 county JOIN villageCountyCityProvince_村县市省 jointable ON county.countyDistrictId_县或区代码=jointable.countyDistrictId_县或区代码 \
-    JOIN  city_市 city ON city.cityId_市代码 = jointable.cityId_市代码 JOIN province_省 province ON province.provinceId_省代码=jointable.provinceId_省代码 JOIN  village_村 village ON village.villageInnerId_村庄内部代码= jointable.villageInnerId_村庄内部代码 LIMIT 100;")
-    nameList = mycursor.fetchall()
+    JOIN  city_市 city ON city.cityId_市代码 = jointable.cityId_市代码 JOIN province_省 province ON province.provinceId_省代码=jointable.provinceId_省代码 JOIN  village_村 village ON village.villageInnerId_村庄内部代码= jointable.villageInnerId_村庄内部代码 LIMIT {},{};".format(
+            pageNumber*50, 50)
 
-  else:
+        mycursor.execute(sql)
 
-    data = request.get_data()
-    json_data = json.loads(data.decode("utf-8"))
-    namefilter = json_data.get("namefilter")
-    if len(namefilter) == 0 or namefilter == " ":
-      return "No paramters in namefilter"
+        nameList = mycursor.fetchall()
 
     else:
-      name_check = re.compile(r'[A-Za-z]', re.S)
-      if len(re.findall(name_check,namefilter)):
-        print("this is english mode")
-        mycursor.execute("SELECT village.nameChineseCharacters_村名汉字, county.nameChineseCharacters_县或区汉字, city.nameChineseCharacters_市汉字, province.nameChineseCharacters_省汉字, jointable.villageInnerId_村庄内部代码 \
+
+        data = request.get_data()
+        json_data = json.loads(data.decode("utf-8"))
+        namefilter = json_data.get("namefilter")
+        if len(namefilter) == 0 or namefilter == " ":
+            return "No paramters in namefilter"
+
+        else:
+            name_check = re.compile(r'[A-Za-z]', re.S)
+            if len(re.findall(name_check, namefilter)):
+                print("this is english mode")
+                mycursor.execute("SELECT village.nameChineseCharacters_村名汉字, county.nameChineseCharacters_县或区汉字, city.nameChineseCharacters_市汉字, province.nameChineseCharacters_省汉字, jointable.villageInnerId_村庄内部代码 \
              FROM county_县 county JOIN villageCountyCityProvince_村县市省 jointable ON county.countyDistrictId_县或区代码=jointable.countyDistrictId_县或区代码 \
             JOIN  city_市 city ON city.cityId_市代码 = jointable.cityId_市代码 JOIN province_省 province ON province.provinceId_省代码=jointable.provinceId_省代码 JOIN  village_村 village ON village.villageInnerId_村庄内部代码= jointable.villageInnerId_村庄内部代码 WHERE village.nameHanyuPinyin_村名汉语拼音 LIKE '%{}%';".format(
-          namefilter))
-      else:
-        print("this is Chinese mode")
-        mycursor.execute("SELECT village.nameChineseCharacters_村名汉字, county.nameChineseCharacters_县或区汉字, city.nameChineseCharacters_市汉字, province.nameChineseCharacters_省汉字, jointable.villageInnerId_村庄内部代码 \
+                    namefilter))
+            else:
+                print("this is Chinese mode")
+                mycursor.execute("SELECT village.nameChineseCharacters_村名汉字, county.nameChineseCharacters_县或区汉字, city.nameChineseCharacters_市汉字, province.nameChineseCharacters_省汉字, jointable.villageInnerId_村庄内部代码 \
                      FROM county_县 county JOIN villageCountyCityProvince_村县市省 jointable ON county.countyDistrictId_县或区代码=jointable.countyDistrictId_县或区代码 \
                     JOIN  city_市 city ON city.cityId_市代码 = jointable.cityId_市代码 JOIN province_省 province ON province.provinceId_省代码=jointable.provinceId_省代码 JOIN  village_村 village ON village.villageInnerId_村庄内部代码= jointable.villageInnerId_村庄内部代码 WHERE village.nameChineseCharacters_村名汉字 LIKE '%{}%';".format(
-          namefilter))
+                    namefilter))
 
-      nameList = mycursor.fetchall()
-      print(nameList)
+            nameList = mycursor.fetchall()
+            print(nameList)
 
-  for item in nameList:
-    temp = {}
-    temp["name"] = item[0]
-    temp["county"] = item[1]
-    temp["city"] = item[2]
-    temp["province"] = item[3]
-    temp["id"] = item[4]
-    table["data"].append(temp)
+    for item in nameList:
+        temp = {}
+        temp["name"] = item[0]
+        temp["county"] = item[1]
+        temp["city"] = item[2]
+        temp["province"] = item[3]
+        temp["id"] = str(int(float(item[4])))
+        table["data"].append(temp)
 
-  return jsonify(table)
+    return jsonify(table)
 
 
 # @village_blueprint.route("/advancesearch", methods=["POST"], strict_slashes=False)
@@ -861,8 +937,9 @@ def downloadData():
   topic = request.args.get("topic", None)
 
   path = village_id+"_"+topic
-  if os.path.exists(os.path.join(single_dir, path)):
-    return send_from_directory(single_dir, path, as_attachment=True)
+  if os.path.exists(os.path.join(single_dir, path+".csv")):
+
+    return send_from_directory(single_dir, path+".csv", as_attachment=True)
   return jsonify({"code":4003,"message":"File is not exist or file can't download"})
 
 
@@ -880,7 +957,7 @@ def getVillage(mycursor, village_id, gazetteerName):
   villageName = allNames[3]
 
   mycursor.execute(
-    "SELECT a.data_数据, b.name_名称, c.name_名称 FROM villageGeography_村庄地理 as a ,villageGeographyCategory_村庄地理类 as b, villageGeographyUnit_村庄地理单位 as c WHERE a.villageInnerId_村庄内部代码={} AND a.categoryId_类别代码 = b.categoryId_类别代码 AND a.unitId_单位代码=c.unitId_单位代码".format(
+    "SELECT a.data_数据, b.name_名称, c.name_名称 FROM villageGeography_村庄地理 as a ,villageGeographyCategory_村庄地理类 as b, villageGeographyUnit_村庄地理单位 as c WHERE a.gazetteerId_村志代码={} AND a.categoryId_类别代码 = b.categoryId_类别代码 AND a.unitId_单位代码=c.unitId_单位代码".format(
       village_id))
   geographyList = mycursor.fetchall()
   for item in geographyList:
@@ -925,7 +1002,7 @@ def getNaturalDisaster(mycursor, village_id, gazetteerName):
   table = {}
   table["data"] = []
   mycursor.execute(
-    "SELECT b.name_名称, a.year_年份 FROM naturalDisasters_自然灾害 as a, naturalDisastersCategory_自然灾害类 as b WHERE villageInnerId_村庄内部代码={} AND a.categoryId_类别代码=b.categoryId_类别代码".format(
+    "SELECT b.name_名称, a.year_年份 FROM naturalDisasters_自然灾害 as a, naturalDisastersCategory_自然灾害类 as b WHERE gazetteerId_村志代码={} AND a.categoryId_类别代码=b.categoryId_类别代码".format(
       village_id))
   disasterList = mycursor.fetchall()
 
@@ -944,7 +1021,7 @@ def getNaturalEnvironment(mycursor, village_id, gazetteerName):
   table["data"] = []
   mycursor.execute(
     "SELECT a.data_数据, b.name_名称, c.name_名称 FROM naturalEnvironment_自然环境 as a, naturalEnvironmentCategory_自然环境类 as b,naturalEnvironmentUnit_自然环境单位 as c \
-    WHERE villageInnerId_村庄内部代码={} AND a.categoryId_类别代码=b.categoryId_类别代码 \
+    WHERE gazetteerId_村志代码={} AND a.categoryId_类别代码=b.categoryId_类别代码 \
     AND a.unitId_单位代码=c.unitId_单位代码".format(
       village_id))
   naturalList = mycursor.fetchall()

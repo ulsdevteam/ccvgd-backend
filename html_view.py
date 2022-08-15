@@ -14,6 +14,6 @@ def html(filename):
   return html
 
 
-@html_blueprint.route("/")
+@html_blueprint.route("/search")
 def default():
   return  "HELLO WORLD"
