@@ -8,7 +8,6 @@ import mysql.connector
 import pandas as pd
 import pymysql
 
-from settings import *
 from werkzeug.routing import BaseConverter
 from flask import Blueprint, jsonify, request, session, send_from_directory, send_file
 from flask_cors import CORS
