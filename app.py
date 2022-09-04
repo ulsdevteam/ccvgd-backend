@@ -32,7 +32,7 @@ manager = Manager(app)
 app.register_blueprint(html_blueprint)
 
 # install the link of details of blueprint
-app.register_blueprint(village_blueprint, url_prefix="/ccvg")
+app.register_blueprint(village_blueprint, url_prefix="/")
 app.register_blueprint(user_blueprint, url_prefix="/user")
 app.register_blueprint(advance_blueprint, url_prefix="/advancesearch")
 app.register_blueprint(utils_blueprint, url_prefix="/utils")
