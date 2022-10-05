@@ -10,4 +10,4 @@ RUN pip3 install -r requirements.txt
 
 # Run app.py when the container launches
 COPY app.py /app
-CMD python3 app.py runserver -h 0.0.0.0 -p 5050
+CMD python3 app.py runserver -h 0.0.0.0 -p 80
