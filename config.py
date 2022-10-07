@@ -3,7 +3,7 @@ import os
 
 
 mysql_host = os.getenv("MYSQL_HOST")
-mysql_password = os.getenv("MYSQL_ROOT_PASSWORD")
+mysql_password = os.getenv("MYSQL_PASSWORD")
 mysql_username = os.getenv("MYSQL_USER")
 mysql_port = int(os.getenv("MYSQL_PORT"))
 mysql_database = os.getenv("MYSQL_DATABASE")
