@@ -19,6 +19,7 @@ RUN adduser --system --group --disabled-login ccvguser; cd /home/ccvguser/
 
 COPY . /var/www/apache-flask/
 RUN chown ccvguser:www-data -R /var/www/apache-flask/
+RUN chmod 755 /var/www/apache-flask/
 WORKDIR /var/www/apache-flask/
 RUN pip install --no-cache-dir -r requirements.txt
 
@@ -28,10 +29,7 @@ EXPOSE 80
 
 CMD /usr/sbin/apache2ctl -D FOREGROUND
 
-
-
-
-
+EXPOSE 80
 
 
 
