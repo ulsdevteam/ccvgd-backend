@@ -20,6 +20,7 @@ RUN adduser --system --group --disabled-login ccvguser; cd /home/ccvguser/
 COPY . /var/www/apache-flask/
 RUN chown ccvguser:www-data -R /var/www/apache-flask/
 RUN chmod 755 /var/www/apache-flask/
+RUN chmod 777 /var/www/apache-flask/temp_write.csv
 WORKDIR /var/www/apache-flask/
 RUN pip install --no-cache-dir -r requirements.txt
 
