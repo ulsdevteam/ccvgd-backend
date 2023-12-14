@@ -15,7 +15,7 @@ RUN a2enmod headers
 RUN a2enmod rewrite
 RUN a2enmod wsgi
 
-RUN adduser --system --group --disabled-login ccvguser; cd /home/ccvguser/
+RUN adduser --system --group --disabled-login ccvguser
 
 COPY . /var/www/apache-flask/
 RUN chown ccvguser:www-data -R /var/www/apache-flask/
