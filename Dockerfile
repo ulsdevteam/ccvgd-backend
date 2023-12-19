@@ -1,9 +1,16 @@
 FROM python:3.9
 
 RUN apt-get update
-RUN apt-get install --yes apache2
-RUN apt-get install --yes libapache2-mod-wsgi-py3
+RUN apt-get install --yes apache2 apache2-dev
 RUN pip install --upgrade pip
+
+RUN wget https://github.com/GrahamDumpleton/mod_wsgi/archive/refs/tags/4.9.0.tar.gz \
+    && tar xvfz 4.9.0.tar.gz \
+    && cd mod_wsgi-4.9.0 \
+    && ./configure --with-apxs=/usr/bin/apxs --with-python=/usr/local/bin/python3.9 \
+    && make \
+    && make install \
+    && make clean
 
 ADD wsgi.load /etc/apache2/mods-available/wsgi.load
 
